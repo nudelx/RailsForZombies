@@ -378,3 +378,272 @@ So now we can see the whole picture :
 
 
 
+-----
+
+
+#Level 4 - Controllers
+
+
+ The control is where you control all your app
+the call for the tweets shouldn't be in a view 
+this is where a controller can make sense 
+
+```ruby
+<h1></h1>
+<table>
+	
+	<tr>
+		<th>Status</th>
+		<th>Zombie</th>
+	</tr>
+	<% tweets = Tweet.all %>
+
+	<% if tweets.size == 0 %>
+		<span>No tweets found</span>
+	<% end > 
+
+	<% tweets.all.each do |tweet | %>
+		<tr>
+			<td><%= link_to tweet.status, tweet %> </td>
+			<td><%= link_to tweet.zombie.name, zombie %> </td>
+
+			<td><%= link_to "Edit" , edit_tweet_path(tweet) %> </td>
+			<td><%= link_to "Destroy", tweet, method: :delete %> </td>
+
+		</tr>
+	<% end %>	
+
+
+</table>
+
+```
+
+ 
+
+#### Request: /tweets/1
+
+___/app/controllers/tweets_controllers.rb___
+
+```ruby
+
+	class TweetsController < ApplicationController
+		
+		def show
+			@tweet = Tweets.find(1)
+		end	
+	end
+
+```
+
+
+___/app/view/tweets/show.html.erb___
+
+```ruby
+
+	<h1> <%= @tweet.status %> </h1>
+	<p> Posted by <%= @tweet.zombie.name %> </p>
+
+```
+
+
+> problem:
+
+	but what is we have to render the differed page to show 
+	the results for example status.html.erb?
+	here is an example:
+
+
+
+___/app/controllers/tweets_controllers.rb___
+
+```ruby
+
+	class TweetsController < ApplicationController
+		
+		def show
+			@tweet = Tweets.find(1)
+			render action: 'status'
+		end	
+	end
+
+```
+
+
+___/app/view/tweets/status.html.erb___
+
+```ruby
+
+	<h1> <%= @tweet.status %> </h1>
+	<p> Posted by <%= @tweet.zombie.name %> </p>
+
+```
+
+In order to access all parameters passed by the server 
+we can do it by using the `params hash` value 
+
+` params =  { id : '1' }`
+
+
+so now we can get the proper tweet 
+
+```ruby
+
+	class TweetsController < ApplicationController
+		
+		def show
+			@tweet = Tweets.find(params[:id])
+			render action: 'status'
+		end	
+	end
+
+```
+
+use secure value only by :
+
+
+```ruby
+
+	@tweet = Tweet.create( params.require(:tweet).permit(:status) )  ### or 
+	@tweet = Tweet.create( params.require(:tweet).permit([:status, :location]) )
+	### instead of 
+	@tweet = Tweet.create( params[:tweet][:status] )
+
+```
+
+
+##JSON
+
+Some time for API / REST we have to support different formats 
+in our case we will use JSON for this example 
+
+
+```ruby
+
+	class TweetsController < ApplicationController
+		def show
+			@tweet = Tweets.find(params[:id])
+			respond_to do | format |
+				format.html  ### show.html.erb
+				format.json { render json: @tweet }
+				format.xml  { render xml: @tweet }
+			end	
+		end
+	end
+
+```
+
+## Controller Actions
+
+```ruby
+
+	class TweetsController < ApplicationController
+
+		def index   # List all tweet
+				
+		def show    # Show a single tweet
+
+		def new     # Show a edit tweet
+
+		def edit    # Show an edit tweet form
+
+		def create  # create a new tweet
+
+		def update  # create a new tweet
+		
+		def destroy # create a new tweet
+
+
+	end
+
+```
+
+
+
+## Redirect and Flash
+
+
+* session             Works like per user hash
+* flash[:notice]      To send messages to the user
+* redirect_to <path>  To redirect the request
+
+```ruby
+
+	class TweetsController < ApplicationController
+		def edit
+			@tweet = Tweets.find(params[:id])
+			
+			if session[:zombie_id] != @tweet.zombie.id
+				flash[:notice] = "Sorry you can't see/ edit it "
+				redirect_to(tweets_path)
+			end
+		end
+	end
+
+```
+
+or alternate recipe: 
+
+
+```ruby
+
+				redirect_to(tweets_path , notice: "Sorry you can't see/ edit it ")
+
+```
+
+
+Now we have to  specify the view where the notice will go 
+
+
+```ruby
+
+	<h1> <%= @tweet.status %> </h1>
+	<p> Posted by <%= @tweet.zombie.name %> </p>
+
+	<% if flash[:notice] %>
+
+	<% end %>
+
+
+```
+
+Now we can move the duplicate code to get tweets and auth
+to a function and use it according to the D.R.Y
+
+
+```ruby
+
+	class TweetsController < ApplicationController
+
+		before_action :get_tweet  , only: [:edit, :update, :destroy]
+		before_action :check_outh , only: [:edit, :update, :destroy]
+
+		def check_auth
+			if session[:zombie_id] != @tweet.zombie_id
+			redirect_to(tweets_path , notice: "Sorry you can't see/ edit it ")
+		def
+
+		def get_tweet 
+			@tweets = Tweet.find(params[:id])
+		end
+
+		def edit
+			
+		end
+
+		def update
+			
+		end
+
+		def destroy
+			
+		end
+	end
+
+```
+
+
+
+
+
+
+
